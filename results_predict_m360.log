@@ -1,0 +1,50 @@
+m360_bicycle src193: 1179648 gaussians, 6.4s
+m360_bicycle src007: 1179648 gaussians, 6.2s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_bicycle src077: 1179648 gaussians, 6.3s
+m360_bonsai src289: 1179648 gaussians, 6.4s
+m360_bonsai src012: 1179648 gaussians, 6.3s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_bonsai src090: 1179648 gaussians, 6.2s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_counter src155: 1179648 gaussians, 6.2s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_counter src117: 1179648 gaussians, 6.3s
+m360_counter src036: 1179648 gaussians, 6.4s
+m360_garden src135: 1179648 gaussians, 6.4s
+m360_garden src003: 1179648 gaussians, 6.3s
+m360_garden src030: 1179648 gaussians, 6.4s
+m360_kitchen src233: 1179648 gaussians, 6.3s
+m360_kitchen src114: 1179648 gaussians, 6.3s
+m360_kitchen src030: 1179648 gaussians, 6.4s
+m360_room src239: 1179648 gaussians, 6.4s
+m360_room src166: 1179648 gaussians, 6.4s
+m360_room src077: 1179648 gaussians, 6.0s
+m360_stump src124: 1179648 gaussians, 5.9s
+m360_stump src037: 1179648 gaussians, 5.9s
+m360_stump src065: 1179648 gaussians, 6.2s
+[transformers] `DepthProImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `DepthProImageProcessor` instead.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/1407 [00:00<?, ?it/s]Loading weights:  72%|███████▏  | 1016/1407 [00:00<00:00, 10157.56it/s]Loading weights: 100%|██████████| 1407/1407 [00:00<00:00, 10095.86it/s]
+depthpro m360_bicycle 7 2.38671875 8840.0
+depthpro m360_bicycle 77 1.517578125 166.375
+depthpro m360_bicycle 193 1.8740234375 7.265625
+depthpro m360_bonsai 12 1.0078125 3.35546875
+depthpro m360_bonsai 90 0.83935546875 3.353515625
+depthpro m360_bonsai 289 0.90966796875 2.376953125
+depthpro m360_counter 36 0.58251953125 3.2890625
+depthpro m360_counter 117 0.701171875 3.73046875
+depthpro m360_counter 155 0.64892578125 2.80078125
+depthpro m360_garden 3 1.427734375 45.0
+depthpro m360_garden 30 1.24609375 126.4375
+depthpro m360_garden 135 1.54296875 11.8984375
+depthpro m360_kitchen 30 0.58935546875 3.9921875
+depthpro m360_kitchen 114 0.7294921875 2.693359375
+depthpro m360_kitchen 233 0.78173828125 2.30078125
+depthpro m360_room 77 1.310546875 7.88671875
+depthpro m360_room 166 0.802734375 6.03515625
+depthpro m360_room 239 1.337890625 4.33203125
+depthpro m360_stump 37 1.09765625 55.875
+depthpro m360_stump 65 1.5048828125 40.75
+depthpro m360_stump 124 1.1982421875 2.826171875
+EXIT 0

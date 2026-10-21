@@ -1,0 +1,27 @@
+fern src012: 1179648 gaussians, 5.9s
+fern src016: 1179648 gaussians, 5.7s
+fern src000: 1179648 gaussians, 5.7s
+flower src020: 1179648 gaussians, 5.7s
+flower src004: 1179648 gaussians, 5.7s
+flower src033: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+fortress src021: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+fortress src016: 1179648 gaussians, 5.7s
+fortress src036: 1179648 gaussians, 5.7s
+horns src033: 1179648 gaussians, 5.7s
+horns src026: 1179648 gaussians, 5.7s
+horns src017: 1179648 gaussians, 5.7s
+leaves src013: 1179648 gaussians, 5.7s
+leaves src019: 1179648 gaussians, 5.7s
+leaves src010: 1179648 gaussians, 5.7s
+orchids src012: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+orchids src006: 1179648 gaussians, 5.7s
+orchids src021: 1179648 gaussians, 5.7s
+room src035: 1179648 gaussians, 5.7s
+room src002: 1179648 gaussians, 5.7s
+room src017: 1179648 gaussians, 5.7s
+trex src020: 1179648 gaussians, 5.8s
+trex src010: 1179648 gaussians, 5.7s
+trex src033: 1179648 gaussians, 5.7s

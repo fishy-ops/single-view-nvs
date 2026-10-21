@@ -1,0 +1,90 @@
+fern src018: 1179648 gaussians, 5.8s
+fern src001: 1179648 gaussians, 5.7s
+fern src004: 1179648 gaussians, 5.6s
+fern src005: 1179648 gaussians, 5.6s
+fern src015: 1179648 gaussians, 5.6s
+flower src003: 1179648 gaussians, 5.7s
+flower src017: 1179648 gaussians, 5.6s
+Received 2 reflection matrices from SVD. Flipping them to rotations.
+flower src027: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+flower src023: 1179648 gaussians, 5.6s
+flower src007: 1179648 gaussians, 5.6s
+fortress src008: 1179648 gaussians, 5.6s
+fortress src011: 1179648 gaussians, 5.7s
+fortress src001: 1179648 gaussians, 5.6s
+fortress src004: 1179648 gaussians, 5.7s
+fortress src031: 1179648 gaussians, 5.6s
+horns src058: 1179648 gaussians, 5.6s
+horns src004: 1179648 gaussians, 5.6s
+horns src057: 1179648 gaussians, 5.6s
+horns src006: 1179648 gaussians, 5.6s
+horns src045: 1179648 gaussians, 5.7s
+leaves src011: 1179648 gaussians, 5.6s
+leaves src006: 1179648 gaussians, 5.7s
+leaves src024: 1179648 gaussians, 5.6s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+leaves src009: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+leaves src015: 1179648 gaussians, 5.6s
+orchids src023: 1179648 gaussians, 5.7s
+orchids src022: 1179648 gaussians, 5.6s
+orchids src002: 1179648 gaussians, 5.7s
+orchids src005: 1179648 gaussians, 5.6s
+orchids src001: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+room src032: 1179648 gaussians, 5.6s
+room src026: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+room src012: 1179648 gaussians, 5.6s
+room src018: 1179648 gaussians, 5.7s
+room src001: 1179648 gaussians, 5.6s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+trex src004: 1179648 gaussians, 5.7s
+trex src036: 1179648 gaussians, 5.6s
+trex src049: 1179648 gaussians, 5.6s
+trex src017: 1179648 gaussians, 5.6s
+trex src040: 1179648 gaussians, 5.6s
+m360_bicycle src036: 1179648 gaussians, 5.6s
+m360_bicycle src089: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_bicycle src082: 1179648 gaussians, 5.6s
+m360_bicycle src085: 1179648 gaussians, 5.7s
+m360_bicycle src116: 1179648 gaussians, 5.6s
+m360_bonsai src159: 1179648 gaussians, 5.7s
+m360_bonsai src029: 1179648 gaussians, 5.6s
+m360_bonsai src140: 1179648 gaussians, 5.6s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_bonsai src084: 1179648 gaussians, 5.6s
+m360_bonsai src063: 1179648 gaussians, 5.7s
+m360_counter src114: 1179648 gaussians, 5.6s
+m360_counter src232: 1179648 gaussians, 5.6s
+m360_counter src093: 1179648 gaussians, 5.6s
+m360_counter src088: 1179648 gaussians, 5.7s
+m360_counter src086: 1179648 gaussians, 5.6s
+m360_garden src157: 1179648 gaussians, 5.6s
+m360_garden src184: 1179648 gaussians, 5.6s
+m360_garden src145: 1179648 gaussians, 5.6s
+m360_garden src152: 1179648 gaussians, 5.6s
+m360_garden src091: 1179648 gaussians, 5.7s
+m360_kitchen src073: 1179648 gaussians, 5.6s
+m360_kitchen src169: 1179648 gaussians, 5.7s
+Received 2 reflection matrices from SVD. Flipping them to rotations.
+m360_kitchen src142: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_kitchen src116: 1179648 gaussians, 5.7s
+m360_kitchen src028: 1179648 gaussians, 5.6s
+m360_room src252: 1179648 gaussians, 5.6s
+m360_room src264: 1179648 gaussians, 5.7s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_room src268: 1179648 gaussians, 5.6s
+m360_room src024: 1179648 gaussians, 5.6s
+m360_room src036: 1179648 gaussians, 5.6s
+m360_stump src081: 1179648 gaussians, 5.6s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_stump src106: 1179648 gaussians, 5.6s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_stump src070: 1179648 gaussians, 5.6s
+m360_stump src068: 1179648 gaussians, 5.6s
+Received 1 reflection matrices from SVD. Flipping them to rotations.
+m360_stump src046: 1179648 gaussians, 5.6s

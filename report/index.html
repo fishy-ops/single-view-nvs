@@ -1,0 +1,795 @@
+<title>How Far Can One Photo Move?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #eef1f0;
+  --surface: #fafbfa;
+  --surface-2: #e4e8e6;
+  --ink: #16191d;
+  --ink-2: #48515a;
+  --muted: #6f7881;
+  --rule: #d3d9d6;
+  --grid: #e3e7e5;
+  --sharp: #2a78d6;
+  --warp: #eb6834;
+  --dp: #1baf7a;
+  --identity: #8b939b;
+  --unseen: #d9412f;
+  --good: #1f8a4c;
+  --warn: #b86e00;
+  --focus: #2a78d6;
+  --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #101316;
+    --surface: #171b1f;
+    --surface-2: #20262b;
+    --ink: #e7eaec;
+    --ink-2: #b1b9c0;
+    --muted: #88919a;
+    --rule: #2b3238;
+    --grid: #232a30;
+    --sharp: #3987e5;
+    --warp: #d95926;
+    --dp: #199e70;
+    --identity: #6e777f;
+    --unseen: #ee5a4a;
+    --good: #3fb56f;
+    --warn: #e19a2b;
+    --focus: #5aa0ee;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #101316;
+  --surface: #171b1f;
+  --surface-2: #20262b;
+  --ink: #e7eaec;
+  --ink-2: #b1b9c0;
+  --muted: #88919a;
+  --rule: #2b3238;
+  --grid: #232a30;
+  --sharp: #3987e5;
+  --warp: #d95926;
+  --dp: #199e70;
+  --identity: #6e777f;
+  --unseen: #ee5a4a;
+  --good: #3fb56f;
+  --warn: #e19a2b;
+  --focus: #5aa0ee;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.6;
+  padding-inline: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 1080px; margin: 0 auto; padding-block: 44px 80px; }
+.prose { max-width: 66ch; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; color: var(--ink); margin: 0; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: 1.02; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.6rem; line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow, .label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+a { color: var(--sharp); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+
+header.intro { display: grid; gap: 18px; margin-bottom: 36px; }
+.lede { font-size: 1.2rem; color: var(--ink-2); max-width: 60ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 500; }
+
+/* ---------- viewer ---------- */
+.viewer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 18px;
+}
+.stage-wrap { display: grid; gap: 10px; min-width: 0; align-content: start; }
+.stage {
+  position: relative;
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.stage.dragging { cursor: grabbing; }
+.stage .layer { position: absolute; inset: 0; background-repeat: no-repeat; }
+.stage .layer[hidden] { display: none !important; }
+.stage-hint {
+  position: absolute; left: 10px; bottom: 10px;
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.04em;
+  color: #fff; background: rgba(0,0,0,0.55); padding: 4px 8px; border-radius: 4px;
+  pointer-events: none; transition: opacity .4s;
+}
+.stage-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button, .toggle {
+  font-family: var(--display); font-size: 0.86rem; font-weight: 500;
+  background: transparent; color: var(--ink-2); border: 0; padding: 6px 12px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.toggle { border: 1px solid var(--rule); border-radius: 6px; display: inline-flex; gap: 8px; align-items: center; }
+.toggle[aria-pressed="true"] { border-color: var(--unseen); color: var(--ink); }
+.toggle .sw { width: 10px; height: 10px; border-radius: 2px; background: var(--unseen); opacity: .35; }
+.toggle[aria-pressed="true"] .sw { opacity: 1; }
+
+.panel { display: grid; gap: 16px; align-content: start; }
+.scenes { display: grid; gap: 4px; }
+.scene-btn {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 8px;
+  text-align: left; background: transparent; border: 1px solid transparent; border-radius: 6px;
+  padding: 6px 8px; cursor: pointer; color: var(--ink);
+  font-family: var(--display); font-size: 0.95rem;
+}
+.scene-btn small { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+.scene-btn:hover { background: var(--surface-2); }
+.scene-btn[aria-pressed="true"] { border-color: var(--rule); background: var(--surface-2); }
+.pad-wrap { display: grid; gap: 6px; }
+.pad { width: 100%; aspect-ratio: 1; display: block; cursor: crosshair; touch-action: none; }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.readout { display: grid; gap: 2px; }
+.readout .v { font-family: var(--mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.quality { grid-column: 1 / -1; display: grid; gap: 6px; }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); position: relative; overflow: hidden; }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--good); border-radius: 3px; transition: width .15s, background .15s; }
+.meter .tick { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink-2); }
+.pill { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; justify-self: start; }
+
+/* ---------- sections ---------- */
+section.finding { display: grid; gap: 18px; margin-top: 64px; }
+section.finding > .head { display: grid; gap: 10px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 16px 12px; display: grid; gap: 10px; min-width: 0; }
+figcaption { display: grid; gap: 4px; }
+figcaption .t { font-family: var(--display); font-weight: 600; font-size: 0.98rem; }
+figcaption .s { font-size: 0.86rem; color: var(--muted); line-height: 1.4; }
+.chart { width: 100%; position: relative; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.chart .axis-title { fill: var(--ink-2); }
+.chart .dl { fill: var(--ink); font-size: 11px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--display); font-size: 0.85rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.legend i.dot { width: 9px; height: 9px; border-radius: 50%; }
+.tip {
+  position: absolute; pointer-events: none; z-index: 5;
+  background: var(--ink); color: var(--surface); border-radius: 6px; padding: 7px 9px;
+  font-family: var(--mono); font-size: 0.72rem; line-height: 1.45; white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+.tip b { font-weight: 500; }
+.tip .k { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+details { font-size: 0.85rem; }
+details summary { cursor: pointer; font-family: var(--display); color: var(--ink-2); }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.82rem; margin-top: 8px; }
+th, td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-family: var(--display); font-weight: 600; color: var(--ink-2); }
+td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+tr.hl td { color: var(--ink); font-weight: 500; }
+
+.keyfacts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.keyfacts div { background: var(--surface); padding: 14px 16px; display: grid; gap: 4px; }
+.keyfacts .big { font-family: var(--display); font-size: 1.9rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.keyfacts .cap { font-size: 0.86rem; color: var(--ink-2); line-height: 1.35; }
+
+.strips { display: grid; gap: 14px; }
+.strip { display: grid; gap: 6px; }
+.strip img { width: 100%; border-radius: 4px; display: block; }
+.strip-cols { display: grid; grid-template-columns: repeat(4, 1fr); font-family: var(--mono); font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.callout { border-left: 3px solid var(--warn); padding: 4px 0 4px 14px; color: var(--ink-2); font-size: 0.95rem; max-width: 66ch; }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; max-width: 70ch; }
+.methods-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; }
+.methods-list div { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: start; font-size: 0.92rem; color: var(--ink-2); }
+.methods-list i { width: 14px; height: 3px; border-radius: 2px; margin-top: 11px; }
+.methods-list b { font-family: var(--display); color: var(--ink); font-weight: 600; }
+footer { margin-top: 72px; padding-top: 18px; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 0.75rem; color: var(--muted); display: grid; gap: 4px; }
+
+@media (max-width: 860px) {
+  .viewer { grid-template-columns: 1fr; }
+  .two { grid-template-columns: 1fr; }
+  .panel { grid-template-columns: 1fr 1fr; }
+  .scenes { grid-column: 1 / -1; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+@media (max-width: 520px) {
+  body { font-size: 16px; padding-inline: 16px; }
+  .panel { grid-template-columns: 1fr; }
+  .keyfacts { grid-template-columns: 1fr; }
+  .strip-cols { font-size: 0.58rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header class="intro">
+    <div class="eyebrow">Research notebook · single-image view synthesis · with Dr. Kumar</div>
+    <h1>How far can one photo move?</h1>
+    <p class="lede">Apple’s SHARP turns a single photograph into 3D Gaussians you can look around in. We measured where that illusion holds against real photos taken from other positions, and found that SHARP’s own geometry predicts how far each photo can be pushed.</p>
+    <div class="meta">
+      <span><b id="m-scenes">15</b> scenes</span>
+      <span><b id="m-photos">120</b> source photos</span>
+      <span><b id="m-pairs">3,607</b> scored photo pairs</span>
+      <span>LLFF + Mip-NeRF 360</span>
+      <span>M4 Pro (inference) · RTX 2070 Super (rendering)</span>
+      <span>15 Sep 2026</span>
+    </div>
+  </header>
+
+  <section class="viewer" aria-label="Interactive camera viewer">
+    <div class="stage-wrap">
+      <div class="stage" id="stage" tabindex="0" aria-label="Rendered view. Drag or use arrow keys to move the camera.">
+        <div class="layer" id="layer-sharp"></div>
+        <div class="layer" id="layer-warp" hidden></div>
+        <div class="layer" id="layer-mask" hidden></div>
+        <div class="layer" id="layer-conf" hidden></div>
+        <div class="stage-hint" id="hint">Drag to move the camera · arrow keys work too</div>
+        <div class="stage-hint" id="conf-note" hidden style="left:auto;right:10px">Confidence UNet · trained without this scene</div>
+      </div>
+      <div class="stage-tools">
+        <div class="seg" role="group" aria-label="Renderer">
+          <button id="mode-sharp" aria-pressed="true">SHARP</button>
+          <button id="mode-warp" aria-pressed="false">Pixel warp</button>
+          <button id="mode-source" aria-pressed="false">Source photo</button>
+        </div>
+        <div class="seg" role="group" aria-label="Overlay">
+          <button id="ov-none" aria-pressed="true">No overlay</button>
+          <button id="ov-mask" aria-pressed="false">Never seen</button>
+          <button id="ov-conf" aria-pressed="false">Predicted error</button>
+        </div>
+      </div>
+    </div>
+    <aside class="panel">
+      <div class="scenes" id="scenes" role="group" aria-label="Scene"></div>
+      <div class="pad-wrap">
+        <div class="label">Camera position · predicted error per position</div>
+        <svg class="pad" id="pad" viewBox="0 0 200 200" role="img" aria-label="Camera position grid"></svg>
+      </div>
+      <div class="readouts">
+        <div class="readout"><span class="label">Offset / depth</span><span class="v" id="r-base">0.00</span></div>
+        <div class="readout"><span class="label">Turn</span><span class="v" id="r-rot">0.0°</span></div>
+        <div class="readout"><span class="label">Unseen</span><span class="v" id="r-unseen">0%</span></div>
+        <div class="readout"><span class="label">Pred. LPIPS</span><span class="v" id="r-lpips">0.00</span></div>
+        <div class="quality">
+          <div class="meter" aria-hidden="true"><i id="meter-fill"></i><span class="tick" id="meter-tick"></span></div>
+          <span class="pill" id="r-status">Within typical range</span>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="finding" style="margin-top:40px">
+    <div class="head prose">
+      <span class="eyebrow">Setup</span>
+      <h2>Render from real camera positions, score against real photos</h2>
+      <p>For each scene we ran SHARP on eight source photos (three of them for the method comparison, which re-renders every baseline), then rendered the scene from the other cameras in the capture and compared each render with the photo actually taken there. Poses come from COLMAP. Predicted scenes are scaled to COLMAP units with one scalar per photo, fit to COLMAP's sparse 3D points. Camera distance is reported as offset ÷ median scene depth, so a 0.10 step on a tabletop and on a room mean the same parallax.</p>
+    </div>
+    <div class="methods-list">
+      <div><i style="background:var(--sharp)"></i><span><b>SHARP</b>: Apple's feed-forward predictor, 1.18M Gaussians per photo, 5.7 s on the M4 Pro.</span></div>
+      <div><i style="background:var(--warp)"></i><span><b>Pixel warp</b>: one opaque splat per pixel at SHARP's own depth, holes filled (Telea). Same geometry, no learned decoder.</span></div>
+      <div><i style="background:var(--dp)"></i><span><b>Depth Pro warp</b>: the same pixel warp using Apple's Depth Pro depth instead.</span></div>
+      <div><i style="background:var(--identity)"></i><span><b>Reuse photo</b>: show the source photo unchanged. This is the floor.</span></div>
+    </div>
+  </section>
+
+  <section class="finding">
+    <div class="head prose">
+      <span class="eyebrow">Finding 1</span>
+      <h2>SHARP’s edge is mostly perceptual</h2>
+      <p id="f1-text">Give every method the same hole filling and a per-pixel warp at SHARP’s own depth comes within half a decibel of SHARP on PSNR. On LPIPS, a perceptual distance, SHARP is better in every one of the scored pairs, and the gap widens as the camera moves further.</p>
+    </div>
+    <div class="keyfacts" id="keyfacts"></div>
+    <div class="two">
+      <figure>
+        <figcaption><span class="t">Perceptual error vs. camera distance</span><span class="s">Mean LPIPS per distance quintile, all 15 scenes: the 1,350 pairs scored for every method (3 photos per scene). Lower is better.</span></figcaption>
+        <div class="legend" id="lg-dist"></div>
+        <div class="chart" id="ch-dist"></div>
+        <details><summary>Show table</summary><div class="tbl" id="tb-dist"></div></details>
+      </figure>
+      <figure>
+        <figcaption><span class="t">Pixel error vs. camera distance</span><span class="s">Mean PSNR per distance quintile. Higher is better. Every method gets the same hole filling.</span></figcaption>
+        <div class="legend" id="lg-psnr"></div>
+        <div class="chart" id="ch-psnr"></div>
+        <details><summary>Show table</summary><div class="tbl" id="tb-psnr"></div></details>
+      </figure>
+    </div>
+  </section>
+
+  <section class="finding">
+    <div class="head prose">
+      <span class="eyebrow">Finding 2</span>
+      <h2>The learned part pays off where the photo never looked</h2>
+      <p>We split every target view into pixels the source photo could see and pixels it could not: newly revealed surfaces and anything outside the original frame. Both regions favour SHARP, but the unseen region is where warping falls apart.</p>
+    </div>
+    <figure>
+      <figcaption><span class="t">LPIPS inside and outside the source photo's view</span><span class="s">Masks come from SHARP's geometry and are shared by every method, so the regions match across bars.</span></figcaption>
+      <div class="legend" id="lg-region"></div>
+      <div class="chart" id="ch-region"></div>
+      <details><summary>Show table</summary><div class="tbl" id="tb-region"></div></details>
+    </figure>
+  </section>
+
+  <section class="finding">
+    <div class="head prose">
+      <span class="eyebrow">Finding 3</span>
+      <h2>SHARP's geometry predicts how far each photo can go</h2>
+      <p id="f3-text">Before rendering anything we know two things: the requested camera move, and how much of that view SHARP's own geometry says the photo never saw. A small ridge model on those features, tested on scenes it never trained on, explains twice as much of the variation in LPIPS as camera distance alone.</p>
+    </div>
+    <div class="two">
+      <figure>
+        <figcaption><span class="t">Predicted vs. measured LPIPS</span><span class="s">Leave-one-scene-out predictions, one dot per photo pair. The diagonal is a perfect prediction.</span></figcaption>
+        <div class="chart" id="ch-scatter"></div>
+        <details><summary>Show model comparison</summary><div class="tbl" id="tb-models"></div></details>
+      </figure>
+      <figure>
+        <figcaption><span class="t">Bad views let through by a movement limit</span><span class="s">Allow a share of all requested moves; count views with LPIPS above the median. A fixed distance limit vs. a limit on predicted error.</span></figcaption>
+        <div class="legend" id="lg-policy"></div>
+        <div class="chart" id="ch-policy"></div>
+        <details><summary>Show table</summary><div class="tbl" id="tb-policy"></div></details>
+      </figure>
+    </div>
+    <div class="keyfacts" id="keyfacts-radius"></div>
+    <p class="prose" id="f3-general"></p>
+    <p class="prose" id="f3-parts"></p>
+    <p class="callout" id="f3-caveat">The gain comes from telling photos apart, not directions. Within a single photo, ranking target poses by predicted error is no better than ranking by distance. The practical form is a per-photo safe radius, not a per-direction map. Our test views mostly differ in distance rather than direction, so a capture with varied directions is needed to settle this.</p>
+  </section>
+
+  <section class="finding" id="conf-section" hidden>
+    <div class="head prose">
+      <span class="eyebrow">Finding 4</span>
+      <h2>Pixel-level confidence maps</h2>
+      <p id="f4-text">A 2M-parameter UNet sees only what's available at render time: SHARP's render, its opacity, its depth, and the unseen mask. It predicts where the render will disagree with the real photo. We trained with three folds split by scene, so every score comes from scenes the network never saw. It beats the free baseline, the unseen mask alone, most where errors come from geometry: object silhouettes and frame edges. Fine foliage stays hard for both.</p>
+    </div>
+    <div class="tbl" id="tb-conf"></div>
+    <p class="prose" style="font-size:0.9rem;color:var(--ink-2)">Rank scores are averaged over three scene-held-out folds. “Worst 20% pixels” means pixels above the 80th percentile of LPIPS in the training scenes. In the examples below, measured and predicted maps share one scale per row: light is low error, dark red is high. Each example is the median-distance test view for that scene.</p>
+    <div class="strips" id="conf-strips"></div>
+    <div class="head prose" id="inpaint-block" hidden>
+      <h3>Warn with it, don't repair with it</h3>
+      <p id="inpaint-text"></p>
+      <div class="tbl" id="tb-inpaint"></div>
+    </div>
+  </section>
+
+  <section class="finding">
+    <div class="head prose">
+      <span class="eyebrow">Follow-up</span>
+      <h2>Can generative fill extend the safe range?</h2>
+      <p>The obvious next move is to invent what the photo never saw: a viewer chooses this effect, so plausible content is acceptable. We tested seven fills along 25-frame camera sweeps on five scenes, plus a network trained for the job, and scored both accuracy against the real photo and how much the fill flickers as the camera moves. A side-by-side comparison viewer is available on request.</p>
+    </div>
+    <ul class="plain">
+      <li><b>Per-frame generative fill looks best but flickers worst.</b> SDXL inpainting on each frame continues the mat behind a toy truck convincingly, yet changes its invention every frame: frame-to-frame change 19.0 (0–255) inside unseen areas, against 3.1 for raw SHARP, which is static but empty.</li>
+      <li><b>Predicting the fill once in 3D removes the flicker.</b> A learned background layer — one hidden colour and depth behind every source pixel, rendered with the scene — is the steadiest fill measured (7.3), because a 3D prediction cannot change when the camera moves.</li>
+      <li><b>But its content still loses to SHARP.</b> On held-out scenes, error in unseen regions is 0.163 for the layer against 0.144 for SHARP's own stretched pixels (perceptual 0.414 vs 0.362). Where the layer paints, it is worse than the smear it replaces in 88% of pairs.</li>
+      <li><b>More data does not fix it.</b> The same model trained on 2,000 vs 7,012 pairs scores 0.164 vs 0.163, with an identical win rate. The limit is the from-scratch appearance model, not the dataset — so scaling this architecture on a cluster would waste the allocation. The compute belongs on adapting a large pretrained video or multi-view diffusion prior.</li>
+      <li><b>Two structural facts this exposed.</b> SHARP covers 75% of unseen pixels with opaque stretched content, so a benchmark that scores those pixels is largely scoring a smear, and a fair protocol should treat them as unknown rather than as content. The other 25% is where SHARP paints nothing at all. Geometrically the unseen region splits differently: <b>65% of it lies beyond the source photo's frame</b> (SHARP stretches splats over most of that, just wrongly), <b>34% is background a foreground object was covering</b>, and only <b>1.2% is a foreground object's own hidden surface</b>. So effort belongs in extending past the frame and completing background behind objects; regenerating the far side of objects would address almost nothing at this kind of camera motion, though an orbit around a hero object would change that balance.</li>
+    </ul>
+  </section>
+
+  <section class="finding">
+    <div class="head prose">
+      <span class="eyebrow">Caveats and next steps</span>
+      <h2>What this does and doesn't show yet</h2>
+    </div>
+    <ul class="plain">
+      <li>Held-out views come from real captures, so ground truth is real, but LLFF's nearest neighbours are already 2–5° apart. We can't measure the sub-degree regime where spatial-photo UIs operate.</li>
+      <li>Scale is fit per photo from COLMAP points. Horns (glass, railings) has a 27% median depth-ratio error, which inflates its error for every method equally.</li>
+      <li>Most remaining prediction error is a constant offset per scene: flower is under-predicted by 0.15 LPIPS, orchids over-predicted by 0.12. Ranking within a scene stays strong (ρ 0.86–0.97). Calibrating each photo from one nearby real view, a stand-in for a phone's second lens, lifts rank correlation from 0.81 to 0.89 and safe-radius ρ from 0.84 to 0.89. The same anchor applied to a camera-distance model fails (R² −0.13).</li>
+      <li>PSNR rewards blur. Before we gave SHARP the same hole fill, smooth inpainting of out-of-frame regions let the pixel warp tie it on PSNR while looking clearly worse, which is why LPIPS is the headline metric. Every number here uses identical filling for all methods.</li>
+      <li><b>Prior art to position against.</b> US patent 12,051,150 (priority Dec 2021) scores whether a photo suits a single-image 3D effect by counting non-occluded pixels in rendered target views, which is close to our unseen-area feature used as a yes/no score. Predictive Photometric Uncertainty in Gaussian Splatting (arXiv 2603.22786, 2026) estimates per-pixel uncertainty, but for scenes optimised from many views. UniSHARP (arXiv 2606.07514, 2026) extends SHARP to fisheye and panoramic cameras without estimating quality. The open contributions here: validation against real held-out photos, a continuous per-photo safe radius, per-direction ranking, pixel-level confidence for feed-forward single-image models, and evidence that it transfers across renderers.</li>
+      <li>Next: a capture with dense, directionally varied cameras around each source (a phone orbit, not a LLFF grid) to test per-direction prediction. A fine-tune that trades SHARP's hallucinated detail for predicted confidence. A user study pairing the predicted safe radius with perceived quality.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>SHARP: Mescheder et al., “Sharp Monocular View Synthesis in Less Than a Second”, Apple 2025 (arXiv 2512.10685). Depth Pro: Bochkovskii et al., Apple 2024.</span>
+    <span>Data: LLFF (Mildenhall et al. 2019, CC BY) and Mip-NeRF 360 (Barron et al. 2022). All photos are from these public datasets.</span>
+  </footer>
+</div>
+
+<script>
+(async function () {
+  const data = await fetch("data.json").then(r => r.json());
+  const $ = id => document.getElementById(id);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const fmt = (x, d = 3) => (x == null ? "–" : Number(x).toFixed(d));
+  const pct = (x, d = 0) => (x == null ? "–" : (100 * x).toFixed(d) + "%");
+  const NAMES = { sharp: "SHARP", sharp_fill: "SHARP", warp_sharpdepth_fill: "Pixel warp", warp_depthpro_fill: "Depth Pro warp", identity: "Reuse photo" };
+  const COLORS = { sharp: "--sharp", sharp_fill: "--sharp", warp_sharpdepth_fill: "--warp", warp_depthpro_fill: "--dp", identity: "--identity" };
+  const S = data.summary;
+
+  $("m-pairs").textContent = data.scatter.length.toLocaleString();
+  $("m-scenes").textContent = Object.keys(S.by_scene).length;
+
+  /* ---------------- viewer ---------------- */
+  const scenesEl = $("scenes"), stage = $("stage"), pad = $("pad");
+  const layers = { sharp: $("layer-sharp"), warp: $("layer-warp"), mask: $("layer-mask"), conf: $("layer-conf") };
+  const tau = data.tau;
+  let scene = null, ix = 3, iy = 3, mode = "sharp", overlay = "none", idle = true;
+
+  data.viewer.forEach((v, i) => {
+    const b = document.createElement("button");
+    b.className = "scene-btn";
+    b.id = "scene-" + v.key;
+    const measured = S.by_scene[v.scene] ? S.by_scene[v.scene].sharp_fill.lpips : null;
+    b.innerHTML = `<span>${v.label}</span><small>${v.dataset} · LPIPS ${fmt(measured, 2)}</small>`;
+    b.title = "Measured mean SHARP LPIPS across this scene's held-out views";
+    b.addEventListener("click", () => { idle = false; setScene(i); });
+    scenesEl.appendChild(b);
+  });
+
+  function sprite(el, url, n) {
+    el.style.backgroundImage = `url("${url}")`;
+    el.style.backgroundSize = `${n * 100}% ${n * 100}%`;
+  }
+  function setScene(i) {
+    scene = data.viewer[i];
+    const base = `assets/${scene.key}/`;
+    stage.style.aspectRatio = `${scene.w} / ${scene.h}`;
+    sprite(layers.sharp, base + "sharp.jpg", scene.grid);
+    sprite(layers.warp, base + "warp.jpg", scene.grid);
+    sprite(layers.mask, base + "mask.png", scene.grid);
+    sprite(layers.conf, base + "conf.png", scene.grid);
+    [...scenesEl.children].forEach((b, j) => b.setAttribute("aria-pressed", String(i === j)));
+    drawPad();
+    update();
+  }
+  function cell() { return scene.cells.find(c => c.ix === ix && c.iy === iy); }
+  function update() {
+    const n = scene.grid, c = cell();
+    const pos = `${(ix / (n - 1)) * 100}% ${(iy / (n - 1)) * 100}%`;
+    Object.values(layers).forEach(l => (l.style.backgroundPosition = pos));
+    if (mode === "source") {
+      layers.sharp.style.backgroundImage = `url("assets/${scene.key}/source.jpg")`;
+      layers.sharp.style.backgroundSize = "100% 100%";
+      layers.sharp.style.backgroundPosition = "0 0";
+    } else {
+      sprite(layers.sharp, `assets/${scene.key}/sharp.jpg`, n);
+      layers.sharp.style.backgroundPosition = pos;
+    }
+    layers.sharp.hidden = mode === "warp";
+    layers.warp.hidden = mode !== "warp";
+    layers.mask.hidden = overlay !== "mask" || mode === "source";
+    layers.conf.hidden = overlay !== "conf" || mode !== "sharp";
+    $("conf-note").hidden = layers.conf.hidden;
+    $("r-base").textContent = fmt(c.baseline_rel, 2);
+    $("r-rot").textContent = c.rot_deg.toFixed(1) + "°";
+    $("r-unseen").textContent = pct(c.disocc_pred);
+    $("r-lpips").textContent = fmt(c.pred_lpips, 2);
+    const lo = 0.1, hi = 0.6, frac = Math.max(0, Math.min(1, (c.pred_lpips - lo) / (hi - lo)));
+    $("meter-fill").style.width = (frac * 100).toFixed(1) + "%";
+    $("meter-tick").style.left = (((tau - lo) / (hi - lo)) * 100).toFixed(1) + "%";
+    const bad = c.pred_lpips > tau, near = c.pred_lpips > tau * 0.85;
+    $("meter-fill").style.background = css(bad ? "--unseen" : near ? "--warn" : "--good");
+    const st = $("r-status");
+    st.textContent = bad ? "Beyond the median error of held-out views" : near ? "Approaching the median error" : "Within typical range";
+    st.style.color = css(bad ? "--unseen" : near ? "--warn" : "--good");
+    drawPadMarker();
+  }
+  function drawPad() {
+    const n = scene.grid, step = 200 / n;
+    let s = `<rect x="0" y="0" width="200" height="200" rx="6" fill="${css("--surface-2")}"/>`;
+    s += `<line x1="100" y1="6" x2="100" y2="194" stroke="${css("--rule")}"/><line x1="6" y1="100" x2="194" y2="100" stroke="${css("--rule")}"/>`;
+    for (const c of scene.cells) {
+      const cx = step * (c.ix + 0.5), cy = step * (c.iy + 0.5);
+      const t = Math.max(0, Math.min(1, (c.pred_lpips - 0.12) / (tau + 0.05 - 0.12)));
+      const col = c.pred_lpips > tau ? css("--unseen") : css("--ink-2");
+      s += `<circle cx="${cx}" cy="${cy}" r="${3 + 6 * t}" fill="${col}" fill-opacity="${0.18 + 0.5 * t}"><title>offset ${fmt(c.baseline_rel, 2)} · predicted LPIPS ${fmt(c.pred_lpips, 2)}</title></circle>`;
+    }
+    s += `<circle id="pad-marker" r="9" fill="none" stroke="${css("--sharp")}" stroke-width="2.5"/>`;
+    pad.innerHTML = s;
+  }
+  function drawPadMarker() {
+    const m = document.getElementById("pad-marker");
+    if (!m) return;
+    const step = 200 / scene.grid;
+    m.setAttribute("cx", step * (ix + 0.5));
+    m.setAttribute("cy", step * (iy + 0.5));
+  }
+  function setFromPointer(el, e) {
+    const r = el.getBoundingClientRect(), n = scene.grid;
+    const fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    const fy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+    const nx = Math.round(fx * (n - 1)), ny = Math.round(fy * (n - 1));
+    if (nx !== ix || ny !== iy) { ix = nx; iy = ny; update(); }
+  }
+  function bindDrag(el) {
+    let down = false;
+    el.addEventListener("pointerdown", e => { down = true; idle = false; el.setPointerCapture(e.pointerId); stage.classList.add("dragging"); $("hint").style.opacity = 0; setFromPointer(el, e); });
+    el.addEventListener("pointermove", e => { if (down) setFromPointer(el, e); });
+    const up = () => { down = false; stage.classList.remove("dragging"); };
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+  }
+  bindDrag(stage);
+  bindDrag(pad);
+  stage.addEventListener("keydown", e => {
+    const n = scene.grid, d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!d) return;
+    e.preventDefault(); idle = false;
+    ix = Math.max(0, Math.min(n - 1, ix + d[0])); iy = Math.max(0, Math.min(n - 1, iy + d[1]));
+    update();
+  });
+  function setMode(m) {
+    mode = m;
+    ["sharp", "warp", "source"].forEach(k => $("mode-" + k).setAttribute("aria-pressed", String(k === m)));
+    update();
+  }
+  $("mode-sharp").onclick = () => setMode("sharp");
+  $("mode-warp").onclick = () => setMode("warp");
+  $("mode-source").onclick = () => setMode("source");
+  function setOverlay(o) {
+    overlay = o;
+    ["none", "mask", "conf"].forEach(k => $("ov-" + k).setAttribute("aria-pressed", String(k === o)));
+    update();
+  }
+  $("ov-none").onclick = () => setOverlay("none");
+  $("ov-mask").onclick = () => setOverlay("mask");
+  $("ov-conf").onclick = () => setOverlay("conf");
+
+  setScene(0);
+  // A slow orbit shows parallax at rest; the first interaction stops it for good.
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let t = 0;
+    const orbit = setInterval(() => {
+      if (!idle) return clearInterval(orbit);
+      t += 1;
+      const n = scene.grid, a = t * 0.35;
+      const nx = Math.round(((Math.cos(a) * 0.55 + 1) / 2) * (n - 1)), ny = Math.round(((Math.sin(a) * 0.35 + 1) / 2) * (n - 1));
+      if (nx !== ix || ny !== iy) { ix = nx; iy = ny; update(); }
+    }, 260);
+  }
+
+  /* ---------------- charts ---------------- */
+  function legend(el, items) {
+    el.innerHTML = items.map(it => `<span><i class="${it.dot ? "dot" : ""}" style="background:var(${it.color})"></i>${it.name}</span>`).join("");
+  }
+  function table(el, head, rows, hl) {
+    el.innerHTML = `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r, i) => `<tr class="${hl && hl(i) ? "hl" : ""}">${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  }
+  function tipFor(chartEl) {
+    let t = chartEl.querySelector(".tip");
+    if (!t) { t = document.createElement("div"); t.className = "tip"; t.hidden = true; chartEl.appendChild(t); }
+    return t;
+  }
+  function niceTicks(lo, hi, count) {
+    const span = hi - lo, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= count) || 10 * mag;
+    const out = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6));
+    return out;
+  }
+
+  // Category line chart with crosshair tooltip.
+  function lineChart(el, { cats, catTitle, series, yLo, yHi, yFmt, yTitle }) {
+    const W = 520, H = 300, m = { l: 46, r: 96, t: 12, b: 48 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const x = i => m.l + (cats.length === 1 ? iw / 2 : (i / (cats.length - 1)) * iw);
+    const y = v => m.t + ih - ((v - yLo) / (yHi - yLo)) * ih;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${yTitle} by ${catTitle}">`;
+    for (const tk of niceTicks(yLo, yHi, 5)) s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(tk)}" y2="${y(tk)}" stroke="${css("--grid")}"/><text x="${m.l - 8}" y="${y(tk) + 4}" text-anchor="end">${yFmt(tk)}</text>`;
+    cats.forEach((c, i) => (s += `<text x="${x(i)}" y="${m.t + ih + 18}" text-anchor="middle">${c}</text>`));
+    s += `<text class="axis-title" x="${m.l + iw / 2}" y="${H - 6}" text-anchor="middle">${catTitle}</text>`;
+    s += `<text class="axis-title" x="12" y="${m.t + ih / 2}" text-anchor="middle" transform="rotate(-90 12 ${m.t + ih / 2})">${yTitle}</text>`;
+    // direct end labels, nudged apart only when they would overlap
+    const ends = series.map(sr => ({ sr, yy: y(sr.values[sr.values.length - 1]) })).sort((a, b) => a.yy - b.yy);
+    for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < 13) ends[i].yy = ends[i - 1].yy + 13;
+    for (const sr of series) {
+      const c = css(sr.color);
+      s += `<polyline fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${sr.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")}"/>`;
+      sr.values.forEach((v, i) => (s += `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${c}" stroke="${css("--surface")}" stroke-width="2"/>`));
+    }
+    for (const e of ends) s += `<text class="dl" x="${x(cats.length - 1) + 10}" y="${e.yy + 4}">${e.sr.name}</text>`;
+    s += `<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ink-2")}" stroke-width="1" visibility="hidden"/>`;
+    s += `<rect x="${m.l - 10}" y="${m.t}" width="${iw + 20}" height="${ih}" fill="transparent"/></svg>`;
+    el.innerHTML = s;
+    const svg = el.querySelector("svg"), xh = svg.querySelector("#xh"), tip = tipFor(el);
+    svg.addEventListener("pointermove", ev => {
+      const r = svg.getBoundingClientRect(), px = ((ev.clientX - r.left) / r.width) * W;
+      const i = Math.max(0, Math.min(cats.length - 1, Math.round(((px - m.l) / iw) * (cats.length - 1))));
+      xh.setAttribute("x1", x(i)); xh.setAttribute("x2", x(i)); xh.setAttribute("visibility", "visible");
+      const sorted = [...series].sort((a, b) => a.values[i] - b.values[i]);
+      tip.innerHTML = `<b>${catTitle} ${cats[i]}</b><br>` + sorted.map(sr => `<span class="k" style="background:${css(sr.color)}"></span>${sr.name} ${yFmt(sr.values[i], true)}`).join("<br>");
+      tip.style.left = (x(i) / W) * r.width + "px";
+      tip.style.top = (m.t / H) * r.height + 8 + "px";
+      tip.hidden = false;
+    });
+    svg.addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+  }
+
+  const bins = S.by_bin;
+  const binLabels = bins.map(b => `${b.lo.toFixed(2)}–${b.hi.toFixed(2)}`);
+  const cmpMethods = ["sharp_fill", "warp_sharpdepth_fill", "warp_depthpro_fill", "identity"].filter(k => bins[0][k]);
+  const lpSeries = cmpMethods.map(k => ({ name: NAMES[k], color: COLORS[k], values: bins.map(b => b[k].lpips) }));
+  const allLp = lpSeries.flatMap(s => s.values);
+  lineChart($("ch-dist"), { cats: binLabels.map((_, i) => `Q${i + 1}`), catTitle: "distance quintile", series: lpSeries,
+    yLo: Math.floor(Math.min(...allLp) * 20) / 20, yHi: Math.ceil(Math.max(...allLp) * 20) / 20, yFmt: v => v.toFixed(2), yTitle: "LPIPS" });
+  legend($("lg-dist"), lpSeries);
+  table($("tb-dist"), ["Quintile", "Offset / depth", "Turn", ...cmpMethods.map(k => NAMES[k])],
+    bins.map((b, i) => [`Q${i + 1}`, binLabels[i], b.rot_deg.toFixed(1) + "°", ...cmpMethods.map(k => fmt(b[k].lpips))]));
+
+  const psMethods = cmpMethods.filter(k => k !== "identity");
+  const psSeries = psMethods.map(k => ({ name: NAMES[k], color: COLORS[k], values: bins.map(b => b[k].psnr) }));
+  const allPs = psSeries.flatMap(s => s.values);
+  lineChart($("ch-psnr"), { cats: binLabels.map((_, i) => `Q${i + 1}`), catTitle: "distance quintile", series: psSeries,
+    yLo: Math.floor(Math.min(...allPs) - 0.3), yHi: Math.ceil(Math.max(...allPs) + 0.3), yFmt: (v, tip) => v.toFixed(tip ? 2 : 1) + (tip ? " dB" : ""), yTitle: "PSNR (dB)" });
+  legend($("lg-psnr"), psSeries);
+  table($("tb-psnr"), ["Quintile", "Offset / depth", ...psMethods.map(k => NAMES[k])],
+    bins.map((b, i) => [`Q${i + 1}`, binLabels[i], ...psMethods.map(k => fmt(b[k].psnr, 2))]));
+
+  // key facts
+  const P = S["paired_vs_sharp_fill"] || {};
+  const warpKey = "warp_sharpdepth_fill";
+  const kf = [
+    { big: pct(P[warpKey] ? P[warpKey].lpips_win_rate : null), cap: "of photo pairs where SHARP has lower LPIPS than the pixel warp at the same depth" },
+    { big: fmt(P[warpKey] ? P[warpKey].d_lpips : null, 3), cap: "mean LPIPS advantage over the pixel warp (lower is better; 1.0 is maximally different)" },
+    { big: (P[warpKey] ? (P[warpKey].d_psnr >= 0 ? "+" : "") + P[warpKey].d_psnr.toFixed(2) : "–") + " dB", cap: "PSNR advantage over the pixel warp: consistent, but small next to the perceptual gap" },
+  ];
+  $("keyfacts").innerHTML = kf.map(k => `<div><span class="big">${k.big}</span><span class="cap">${k.cap}</span></div>`).join("");
+
+  // grouped bars: seen vs unseen
+  (function () {
+    const el = $("ch-region"), ov = S.overall;
+    const ms = ["sharp_fill", "warp_sharpdepth_fill", "warp_depthpro_fill"].filter(k => ov[k]);
+    const groups = [{ key: "lpips_covis", name: "Seen by the source photo" }, { key: "lpips_disocc", name: "Never seen" }];
+    const W = 640, H = 260, m = { l: 46, r: 12, t: 16, b: 40 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const yHi = Math.ceil(Math.max(...ms.flatMap(k => groups.map(g => ov[k][g.key]))) * 10) / 10;
+    const y = v => m.t + ih - (v / yHi) * ih;
+    const gw = iw / groups.length, bw = Math.min(24 * 2, (gw * 0.6) / ms.length), gap = 2;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="LPIPS in seen and unseen regions">`;
+    for (const tk of niceTicks(0, yHi, 5)) s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(tk)}" y2="${y(tk)}" stroke="${css("--grid")}"/><text x="${m.l - 8}" y="${y(tk) + 4}" text-anchor="end">${tk.toFixed(1)}</text>`;
+    s += `<text class="axis-title" x="12" y="${m.t + ih / 2}" text-anchor="middle" transform="rotate(-90 12 ${m.t + ih / 2})">LPIPS</text>`;
+    groups.forEach((g, gi) => {
+      const total = ms.length * bw + (ms.length - 1) * gap, x0 = m.l + gw * gi + (gw - total) / 2;
+      s += `<text class="axis-title" x="${m.l + gw * gi + gw / 2}" y="${H - 12}" text-anchor="middle">${g.name}</text>`;
+      ms.forEach((k, mi) => {
+        const v = ov[k][g.key], bx = x0 + mi * (bw + gap), by = y(v), h = m.t + ih - by, r = Math.min(4, h);
+        const d = `M${bx},${m.t + ih} V${by + r} Q${bx},${by} ${bx + r},${by} H${bx + bw - r} Q${bx + bw},${by} ${bx + bw},${by + r} V${m.t + ih} Z`;
+        s += `<path d="${d}" fill="${css(COLORS[k])}" data-tip="${NAMES[k]} · ${g.name}: ${v.toFixed(3)}"/>`;
+        s += `<text class="dl" x="${bx + bw / 2}" y="${by - 6}" text-anchor="middle">${v.toFixed(2)}</text>`;
+      });
+    });
+    s += `</svg>`;
+    el.innerHTML = s;
+    const tip = tipFor(el);
+    el.querySelectorAll("path[data-tip]").forEach(p => {
+      p.addEventListener("pointerenter", () => { tip.textContent = p.dataset.tip; tip.hidden = false; });
+      p.addEventListener("pointermove", ev => { const r = el.getBoundingClientRect(); tip.style.left = ev.clientX - r.left + "px"; tip.style.top = ev.clientY - r.top + "px"; });
+      p.addEventListener("pointerleave", () => (tip.hidden = true));
+    });
+    legend($("lg-region"), ms.map(k => ({ name: NAMES[k], color: COLORS[k] })));
+    table($("tb-region"), ["Method", "LPIPS seen", "LPIPS never seen", "PSNR seen", "PSNR never seen"],
+      ms.map(k => [NAMES[k], fmt(ov[k].lpips_covis), fmt(ov[k].lpips_disocc), fmt(ov[k].psnr_covis, 2), fmt(ov[k].psnr_disocc, 2)]));
+  })();
+
+  // scatter predicted vs actual
+  (function () {
+    const el = $("ch-scatter"), pts = data.scatter;
+    const W = 420, H = 340, m = { l: 46, r: 14, t: 12, b: 44 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const lo = 0.1, hi = 0.8;
+    const x = v => m.l + ((v - lo) / (hi - lo)) * iw, y = v => m.t + ih - ((v - lo) / (hi - lo)) * ih;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Predicted versus measured LPIPS">`;
+    for (const tk of niceTicks(lo, hi, 7)) {
+      s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(tk)}" y2="${y(tk)}" stroke="${css("--grid")}"/><text x="${m.l - 8}" y="${y(tk) + 4}" text-anchor="end">${tk.toFixed(1)}</text>`;
+      s += `<text x="${x(tk)}" y="${m.t + ih + 16}" text-anchor="middle">${tk.toFixed(1)}</text>`;
+    }
+    s += `<line x1="${x(lo)}" y1="${y(lo)}" x2="${x(hi)}" y2="${y(hi)}" stroke="${css("--ink-2")}" stroke-width="1"/>`;
+    const clamp = v => Math.max(lo, Math.min(hi, v));
+    for (const p of pts) s += `<circle cx="${x(clamp(p.pred)).toFixed(1)}" cy="${y(clamp(p.lpips)).toFixed(1)}" r="2.6" fill="${css("--sharp")}" fill-opacity="0.35"/>`;
+    s += `<text class="axis-title" x="${m.l + iw / 2}" y="${H - 6}" text-anchor="middle">predicted LPIPS</text>`;
+    s += `<text class="axis-title" x="12" y="${m.t + ih / 2}" text-anchor="middle" transform="rotate(-90 12 ${m.t + ih / 2})">measured LPIPS</text>`;
+    s += `<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/></svg>`;
+    el.innerHTML = s;
+    const svg = el.querySelector("svg"), tip = tipFor(el);
+    svg.addEventListener("pointermove", ev => {
+      const r = svg.getBoundingClientRect(), px = ((ev.clientX - r.left) / r.width) * W, py = ((ev.clientY - r.top) / r.height) * H;
+      let best = null, bd = 144;
+      for (const p of pts) { const d = (x(clamp(p.pred)) - px) ** 2 + (y(clamp(p.lpips)) - py) ** 2; if (d < bd) { bd = d; best = p; } }
+      if (!best) return (tip.hidden = true);
+      tip.innerHTML = `${best.m360 ? "Mip-NeRF 360" : "LLFF"} · offset ${fmt(best.baseline_rel, 2)}<br>predicted ${fmt(best.pred, 2)} · measured ${fmt(best.lpips, 2)}`;
+      tip.style.left = (x(clamp(best.pred)) / W) * r.width + "px";
+      tip.style.top = (y(clamp(best.lpips)) / H) * r.height + "px";
+      tip.hidden = false;
+    });
+    svg.addEventListener("pointerleave", () => (tip.hidden = true));
+    const M = data.predictability.all;
+    const rows = Object.entries(M).map(([k, v]) => [k, fmt(v.r2, 2), fmt(v.spearman, 2), fmt(v.spearman_within_bin, 2)]);
+    table($("tb-models"), ["Features (leave-one-scene-out)", "R²", "Spearman ρ", "ρ at equal distance"], rows, i => i === 1);
+    const cam = M["camera move only"], geo = M["+ predicted disocclusion"];
+    $("f3-text").textContent = `Before rendering anything we know two things: the requested camera move, and how much of that view SHARP's own geometry says the photo never saw. A small ridge model on those features, tested on scenes it never trained on, explains ${fmt(geo.r2, 2)} of the variance in LPIPS (R²), against ${fmt(cam.r2, 2)} for camera distance alone. Among views at the same distance, its ranking correlates ${fmt(geo.spearman_within_bin, 2)} with the measured order, against ${fmt(cam.spearman_within_bin, 2)}.` + (data.bootstrap ? ` Resampling whole scenes 1,000 times, the R² gain is ${fmt(data.bootstrap.r2_gain.point, 2)} (95% CI ${fmt(data.bootstrap.r2_gain.ci95[0], 2)} to ${fmt(data.bootstrap.r2_gain.ci95[1], 2)}), and the equal-distance ranking gain is ${fmt(data.bootstrap.wb_gain.point, 2)} (${fmt(data.bootstrap.wb_gain.ci95[0], 2)} to ${fmt(data.bootstrap.wb_gain.ci95[1], 2)}).` : "");
+  })();
+
+  // per-photo safe radius + generalisation
+  (function () {
+    const R = data.safe_radius, G = data.generalization;
+    if (!R) return;
+    const ratio = e => "×" + Math.exp(e).toFixed(1);
+    $("keyfacts-radius").innerHTML = [
+      { big: fmt(R.radius_spearman, 2), cap: `rank correlation between each photo's predicted and measured safe radius (${R.photos} photos, scenes held out)` },
+      { big: ratio(R.radius_log_err_pred), cap: "typical error of the predicted radius per photo, in either direction" },
+      { big: ratio(R.radius_log_err_const), cap: "typical error of one fixed radius for every photo, taken from the other scenes" },
+    ].map(k => `<div><span class="big">${k.big}</span><span class="cap">${k.cap}</span></div>`).join("");
+    if (G) {
+      const cam = G.models["camera move only"], geo = G.models["+ predicted disocclusion"];
+      const T = data.transfer;
+      const tr = T ? ` It also survives a change of capture style: trained on LLFF and tested on Mip-NeRF 360, a camera-distance rule scores R² ${fmt(T.llff_to_m360["camera move only"].r2, 2)} while the unseen-area model scores ${fmt(T.llff_to_m360["+ predicted disocclusion"].r2, 2)}. In the other direction the scores are ${fmt(T.m360_to_llff["camera move only"].r2, 2)} and ${fmt(T.m360_to_llff["+ predicted disocclusion"].r2, 2)}. How far is too far depends on the scene's depth layout, not a fixed distance.` : "";
+      $("f3-general").textContent = `The safe radius is the offset where a photo's error curve crosses the median LPIPS (${fmt(R.tau, 2)}). This isn't specific to SHARP: scoring the Depth Pro pixel warp with unseen masks from its own depth raises R² from ${fmt(cam.r2, 2)} to ${fmt(geo.r2, 2)}, and its per-photo radius rank correlation is ${fmt(G.safe_radius.radius_spearman, 2)}. Any renderer with explicit geometry can estimate its own safe range.` + tr;
+    }
+  })();
+
+  if (data.mask_parts) {
+    const M = data.mask_parts;
+    $("f3-parts").textContent = `Which part of "unseen" matters? Splitting it into content outside the original frame and surfaces hidden behind foreground objects: adding only the out-of-frame share lowers held-out R² from ${fmt(M.all.camera, 2)} to ${fmt(M.all.out_of_frame, 2)} (on LLFF, ${fmt(M.llff.camera, 2)} to ${fmt(M.llff.out_of_frame, 2)}). Adding only the occluded share raises it to ${fmt(M.all.occluded, 2)}; both together reach ${fmt(M.all.both, 2)}. How much the frames overlap doesn't predict quality; what's hidden behind the foreground does.`;
+  }
+
+  // policy chart
+  (function () {
+    const P = data.policies;
+    const cats = P.coverage.map(q => Math.round(q * 100) + "%");
+    const series = [
+      { name: "Distance limit", color: "--warp", values: P.fixed_bad.map(v => v * 100) },
+      { name: "Predicted limit", color: "--sharp", values: P.adaptive_bad.map(v => v * 100) },
+      { name: "Oracle", color: "--identity", values: P.oracle_bad.map(v => v * 100) },
+    ];
+    lineChart($("ch-policy"), { cats, catTitle: "share of moves allowed", series, yLo: 0, yHi: 60, yFmt: (v, tip) => v.toFixed(0) + "%", yTitle: "bad views let through" });
+    legend($("lg-policy"), series);
+    table($("tb-policy"), ["Allowed", "Distance limit", "Predicted limit", "Oracle", "Mean LPIPS (distance)", "Mean LPIPS (predicted)"],
+      P.coverage.map((q, i) => [cats[i], pct(P.fixed_bad[i], 1), pct(P.adaptive_bad[i], 1), pct(P.oracle_bad[i], 1), fmt(P.fixed_mean[i]), fmt(P.adaptive_mean[i])]), i => i === 4);
+    const w = P.within_photo;
+    if (w) {
+      const mid = w.coverage.indexOf(0.5);
+      const R = data.within_photo_rho;
+      $("f3-caveat").textContent = `Most of the gain comes from telling photos apart. At half of all moves allowed, the predicted limit lets through ${pct(P.adaptive_bad[4], 0)} bad views against ${pct(P.fixed_bad[4], 0)} for a distance limit. Pooled over all photos, ranking a single photo's target poses by predicted error is no better than ranking by distance (${pct(w.adaptive_bad[mid], 1)} vs ${pct(w.fixed_bad[mid], 1)} bad at 50%). That splits by capture type, though.` + (R ? ` On LLFF's forward-facing grids, where views mostly differ in distance, distance ranks a photo's views better (ρ ${fmt(R.llff.distance, 2)} vs ${fmt(R.llff.predicted, 2)}). On Mip-NeRF 360 orbits, where views also differ in direction, the prediction does (ρ ${fmt(R.m360.predicted, 2)} vs ${fmt(R.m360.distance, 2)}). A per-direction safety map looks possible, but needs captures built to test it.` : "");
+    }
+  })();
+
+  // inpainting experiment
+  if (data.inpaint) {
+    const I = data.inpaint;
+    $("inpaint-block").hidden = false;
+    $("inpaint-text").textContent = `Does the map tell you where to fix a render? On ${I.n} held-out views we let LaMa inpaint the same share of pixels (about ${pct(I.conf.mean_area, 0)}) in three places. Filling what the source photo never saw lowers LPIPS by ${fmt(I.unseen.d_lpips_mean, 3)} on average. Filling the network's highest-error pixels helps only ${fmt(I.conf.d_lpips_mean, 3)}: it beats a random region ${pct(I.conf_vs_random_lpips_win, 0)} of the time but loses to the unseen mask ${pct(1 - I.conf_vs_unseen_lpips_win, 0)} of the time. Flagged pixels inside the seen region still hold nearly-right, slightly misaligned content, and inpainting replaces it with a guess. The maps are best for warning a viewer where not to trust the image; repairs should target what the photo never saw.` + (data.inpaint_v2 ? ` Two follow-ups agree. Adding the network's top 5% error pixels to the unseen mask beats the mask alone in only ${pct(data.inpaint_v2.unseen_plus_conf_vs_unseen_lpips_win, 0)} of views. Growing the mask by 6 pixels makes LPIPS worse by ${fmt(-data.inpaint_v2.unseen_dil.d_lpips_mean, 3)}. The exact geometric mask is the right repair target.` : "");
+    table($("tb-inpaint"), ["Inpaint where", "LPIPS change", "Improved", "PSNR change"],
+      [["Never seen by the source", "unseen"], ["Highest predicted error", "conf"], ["Random blobs (control)", "random"]].map(([l, k]) =>
+        [l, (I[k].d_lpips_mean >= 0 ? "−" : "+") + Math.abs(I[k].d_lpips_mean).toFixed(3), pct(I[k].lpips_better_rate, 0), (I[k].d_psnr_mean >= 0 ? "+" : "") + I[k].d_psnr_mean.toFixed(2) + " dB"]), i => i === 0);
+  }
+
+  // confidence maps
+  if (data.confidence) {
+    const C = data.confidence.mean;
+    $("conf-section").hidden = false;
+    const label = { constant: "Constant (mean error)", mask_prior: "Unseen mask + opacity (linear)", unet: "Confidence UNet" };
+    table($("tb-conf"), ["Predictor", "Pixel Spearman ρ", "AUROC: worst 20% pixels", "Pixel MAE", "Image-level ρ"],
+      ["constant", "mask_prior", "unet"].map(k => k === "constant"
+        ? [label[k], "n/a", "0.500", fmt(C[k].pixel_mae, 3), "n/a"]  // a constant map has no ranking
+        : [label[k], fmt(C[k].pixel_spearman, 3), fmt(C[k].pixel_auroc_bad, 3), fmt(C[k].pixel_mae, 3), fmt(C[k].image_spearman, 3)]), i => i === 2);
+    const figs = ["fig_fortress.jpg", "fig_horns.jpg", "fig_m360_kitchen.jpg", "fig_m360_garden.jpg"].filter(f => (data.confidence.figs || []).includes(f));
+    $("conf-strips").innerHTML = figs.map(f => `<div class="strip"><div class="strip-cols"><span>SHARP render</span><span>Real photo</span><span>Measured error</span><span>Predicted error</span></div><img src="assets/${f}" alt="Confidence map example for ${f.replace("fig_", "").replace(".jpg", "")}" loading="lazy"></div>`).join("");
+  }
+})();
+</script>
